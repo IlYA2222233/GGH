@@ -1041,7 +1041,7 @@ if InfoFrame then
     infoText.Position = UDim2.new(0, 10, 0, 40)
     infoText.BackgroundTransparency = 1
     infoText.TextColor3 = Color3.fromRGB(200, 200, 200)
-    infoText.Text = "🔧 Полный функционал:\n• Телепорт к игрокам\n• Полет (WASD + Space/Shift)\n• ESP и имена над головами\n• Увеличение скорости/прыжка\n• Noclip и ночное зрение\n• X-Ray и улучшенная графика"
+    infoText.Text = "🔧 Полный функционал:\n• Телепорт к игрокам\n• Полет (WASD + Space/Shift)\n• ESP и имена над головами\n• Увеличение скорости/прыжка\n• Noclip и ночное зрение\n• X-Ray и улучшенная графика также наш телеграм канал GGH_Ro"
     infoText.Font = Enum.Font.Gotham
     infoText.TextSize = 13
     infoText.TextXAlignment = Enum.TextXAlignment.Left
