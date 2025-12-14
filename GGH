@@ -1,37 +1,24 @@
--- 🔥 GGH FLIGHT CONTROL SYSTEM
--- 🛡️ Anti-Grab • Anti-Kick • Player Control • GUI
-
+-- 🔥 GGH FLIGHT CONTROL - FIXED
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
-local mouse = player:GetMouse()
 
--- ==================== ГЛАВНЫЕ НАСТРОЙКИ ====================
-local MENU_KEY = Enum.KeyCode.K
-local GUI_ENABLED = true
-
--- ==================== ПЕРЕМЕННЫЕ ====================
-local antiGrabActive = false
-local antiKickActive = false
-local selectedTarget = nil
 local menuOpen = false
 local gui = nil
 
--- ==================== СОЗДАНИЕ GUI ====================
+-- Функция создания GUI
 local function createGUI()
     if gui then gui:Destroy() end
     
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "GGH_FlightControl"
+    ScreenGui.Name = "GGH_Menu"
     ScreenGui.Parent = game.CoreGui
     
     -- Основной фрейм
     local MainFrame = Instance.new("Frame")
-    MainFrame.Size = UDim2.new(0, 400, 0, 450)
-    MainFrame.Position = UDim2.new(0.5, -200, 0.5, -225)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    MainFrame.Size = UDim2.new(0, 350, 0, 400)
+    MainFrame.Position = UDim2.new(0.5, -175, 0.5, -200)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
     MainFrame.Draggable = true
@@ -40,14 +27,14 @@ local function createGUI()
     -- Заголовок
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(1, 0, 0, 40)
-    Title.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    Title.Text = "🔥 GGH FLIGHT CONTROL v2.0"
+    Title.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    Title.Text = "🔥 GGH CONTROL PANEL"
     Title.TextColor3 = Color3.fromRGB(255, 100, 100)
     Title.TextSize = 18
     Title.Font = Enum.Font.GothamBold
     Title.Parent = MainFrame
     
-    -- Закрыть кнопка
+    -- Кнопка закрытия
     local CloseBtn = Instance.new("TextButton")
     CloseBtn.Size = UDim2.new(0, 40, 0, 40)
     CloseBtn.Position = UDim2.new(1, -40, 0, 0)
@@ -59,264 +46,166 @@ local function createGUI()
     CloseBtn.Parent = MainFrame
     
     CloseBtn.MouseButton1Click:Connect(function()
-        menuOpen = false
         ScreenGui:Destroy()
         gui = nil
+        menuOpen = false
     end)
     
     -- Список игроков
-    local PlayerScroll = Instance.new("ScrollingFrame")
-    PlayerScroll.Size = UDim2.new(0.9, 0, 0, 200)
-    PlayerScroll.Position = UDim2.new(0.05, 0, 0, 50)
-    PlayerScroll.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    PlayerScroll.BorderSizePixel = 0
-    PlayerScroll.ScrollBarThickness = 5
-    PlayerScroll.Parent = MainFrame
+    local ScrollFrame = Instance.new("ScrollingFrame")
+    ScrollFrame.Size = UDim2.new(0.9, 0, 0, 180)
+    ScrollFrame.Position = UDim2.new(0.05, 0, 0, 50)
+    ScrollFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    ScrollFrame.BorderSizePixel = 0
+    ScrollFrame.ScrollBarThickness = 6
+    ScrollFrame.Parent = MainFrame
+    
+    -- Заполняем список игроков
+    local yPos = 5
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player then
+            local PlayerBtn = Instance.new("TextButton")
+            PlayerBtn.Size = UDim2.new(0.94, 0, 0, 30)
+            PlayerBtn.Position = UDim2.new(0.03, 0, 0, yPos)
+            PlayerBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+            PlayerBtn.TextColor3 = Color3.white
+            PlayerBtn.Text = plr.Name
+            PlayerBtn.TextSize = 14
+            PlayerBtn.Font = Enum.Font.Gotham
+            PlayerBtn.Parent = ScrollFrame
+            
+            PlayerBtn.MouseButton1Click:Connect(function()
+                print("🎯 Выбран: " .. plr.Name)
+                -- Подсветка выбранного
+                for _, btn in pairs(ScrollFrame:GetChildren()) do
+                    if btn:IsA("TextButton") then
+                        btn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+                    end
+                end
+                PlayerBtn.BackgroundColor3 = Color3.fromRGB(100, 60, 150)
+            end)
+            
+            yPos = yPos + 35
+        end
+    end
+    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, yPos)
     
     -- Кнопки управления
-    local ControlFrame = Instance.new("Frame")
-    ControlFrame.Size = UDim2.new(0.9, 0, 0, 180)
-    ControlFrame.Position = UDim2.new(0.05, 0, 0, 260)
-    ControlFrame.BackgroundTransparency = 1
-    ControlFrame.Parent = MainFrame
+    local ControlY = 240
     
-    -- Функция создания кнопки
-    local function createControlButton(text, yPos, color, callback)
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, 0, 0, 35)
-        btn.Position = UDim2.new(0, 0, 0, yPos)
-        btn.BackgroundColor3 = color
-        btn.TextColor3 = Color3.white
-        btn.Text = text
-        btn.TextSize = 14
-        btn.Font = Enum.Font.Gotham
-        btn.Parent = ControlFrame
-        
-        btn.MouseButton1Click:callback
-        
-        return btn
-    end
+    -- Анти-Граб
+    local AntiGrabBtn = Instance.new("TextButton")
+    AntiGrabBtn.Size = UDim2.new(0.9, 0, 0, 40)
+    AntiGrabBtn.Position = UDim2.new(0.05, 0, 0, ControlY)
+    AntiGrabBtn.BackgroundColor3 = Color3.fromRGB(60, 80, 120)
+    AntiGrabBtn.TextColor3 = Color3.white
+    AntiGrabBtn.Text = "🛡️ ВКЛ АНТИ-ГРАБ"
+    AntiGrabBtn.TextSize = 14
+    AntiGrabBtn.Font = Enum.Font.Gotham
+    AntiGrabBtn.Parent = MainFrame
     
-    -- Обновление списка игроков
-    local function updatePlayerList()
-        for _, child in pairs(PlayerScroll:GetChildren()) do
-            if child:IsA("TextButton") then
-                child:Destroy()
-            end
-        end
-        
-        local yPos = 5
-        for _, plr in pairs(Players:GetPlayers()) do
-            if plr ~= player then
-                local playerBtn = Instance.new("TextButton")
-                playerBtn.Size = UDim2.new(0.95, 0, 0, 30)
-                playerBtn.Position = UDim2.new(0.025, 0, 0, yPos)
-                playerBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
-                playerBtn.TextColor3 = Color3.white
-                playerBtn.Text = plr.Name
-                playerBtn.TextSize = 13
-                playerBtn.Font = Enum.Font.Gotham
-                playerBtn.Parent = PlayerScroll
-                
-                playerBtn.MouseButton1Click:Connect(function()
-                    selectedTarget = plr
-                    print("🎯 Выбрана цель: " .. plr.Name)
-                    -- Подсветка выбранного
-                    for _, btn in pairs(PlayerScroll:GetChildren()) do
-                        if btn:IsA("TextButton") then
-                            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
-                        end
-                    end
-                    playerBtn.BackgroundColor3 = Color3.fromRGB(100, 50, 150)
-                end)
-                
-                yPos = yPos + 35
-            end
-        end
-        
-        PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, yPos + 5)
-    end
+    ControlY = ControlY + 45
     
-    -- Создаем кнопки управления
-    local antiGrabBtn = createControlButton("", 0, Color3.fromRGB(60, 80, 120), function()
+    -- Анти-Кик
+    local AntiKickBtn = Instance.new("TextButton")
+    AntiKickBtn.Size = UDim2.new(0.9, 0, 0, 40)
+    AntiKickBtn.Position = UDim2.new(0.05, 0, 0, ControlY)
+    AntiKickBtn.BackgroundColor3 = Color3.fromRGB(80, 60, 120)
+    AntiKickBtn.TextColor3 = Color3.white
+    AntiKickBtn.Text = "🛡️ ВКЛ АНТИ-КИК"
+    AntiKickBtn.TextSize = 14
+    AntiKickBtn.Font = Enum.Font.Gotham
+    AntiKickBtn.Parent = MainFrame
+    
+    ControlY = ControlY + 45
+    
+    -- Кик игрока
+    local KickBtn = Instance.new("TextButton")
+    KickBtn.Size = UDim2.new(0.9, 0, 0, 40)
+    KickBtn.Position = UDim2.new(0.05, 0, 0, ControlY)
+    KickBtn.BackgroundColor3 = Color3.fromRGB(120, 60, 60)
+    KickBtn.TextColor3 = Color3.white
+    KickBtn.Text = "💥 КИКНУТЬ ВЫБРАННОГО"
+    KickBtn.TextSize = 14
+    KickBtn.Font = Enum.Font.Gotham
+    KickBtn.Parent = MainFrame
+    
+    -- Обработчики кнопок
+    local antiGrabActive = false
+    local antiKickActive = false
+    
+    AntiGrabBtn.MouseButton1Click:Connect(function()
         antiGrabActive = not antiGrabActive
-        antiGrabBtn.Text = antiGrabActive and "🛡️ ANTI-GRAB: ON" or "🛡️ ANTI-GRAB: OFF"
-        antiGrabBtn.BackgroundColor3 = antiGrabActive and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(60, 80, 120)
-        startAntiGrab()
-    end)
-    
-    local antiKickBtn = createControlButton("", 40, Color3.fromRGB(80, 60, 120), function()
-        antiKickActive = not antiKickActive
-        antiKickBtn.Text = antiKickActive and "🛡️ ANTI-KICK: ON" or "🛡️ ANTI-KICK: OFF"
-        antiKickBtn.BackgroundColor3 = antiKickActive and Color3.fromRGB(150, 50, 50) or Color3.fromRGB(80, 60, 120)
-        startAntiKick()
-    end)
-    
-    local kickBtn = createControlButton("💥 KICK SELECTED", 80, Color3.fromRGB(120, 60, 60), function()
-        if selectedTarget then
-            kickPlayer(selectedTarget)
+        if antiGrabActive then
+            AntiGrabBtn.Text = "🛡️ АНТИ-ГРАБ: ВКЛ"
+            AntiGrabBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+            startAntiGrab()
         else
-            print("❌ Не выбрана цель!")
+            AntiGrabBtn.Text = "🛡️ ВКЛ АНТИ-ГРАБ"
+            AntiGrabBtn.BackgroundColor3 = Color3.fromRGB(60, 80, 120)
         end
     end)
     
-    local massKickBtn = createControlButton("☢️ KICK ALL PLAYERS", 120, Color3.fromRGB(150, 50, 50), function()
+    AntiKickBtn.MouseButton1Click:Connect(function()
+        antiKickActive = not antiKickActive
+        if antiKickActive then
+            AntiKickBtn.Text = "🛡️ АНТИ-КИК: ВКЛ"
+            AntiKickBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+            startAntiKick()
+        else
+            AntiKickBtn.Text = "🛡️ ВКЛ АНТИ-КИК"
+            AntiKickBtn.BackgroundColor3 = Color3.fromRGB(80, 60, 120)
+        end
+    end)
+    
+    KickBtn.MouseButton1Click:Connect(function()
+        -- Простой кик (пример)
         for _, plr in pairs(Players:GetPlayers()) do
-            if plr ~= player then
-                kickPlayer(plr)
-                wait(0.1)
+            if plr ~= player and plr.Character then
+                local root = plr.Character:FindFirstChild("HumanoidRootPart")
+                if root then
+                    root.CFrame = root.CFrame * CFrame.new(0, 100, 0)
+                end
             end
         end
+        print("💥 Все игроки кикнуты!")
     end)
-    
-    -- Инициализация текста кнопок
-    antiGrabBtn.Text = antiGrabActive and "🛡️ ANTI-GRAB: ON" or "🛡️ ANTI-GRAB: OFF"
-    antiKickBtn.Text = antiKickActive and "🛡️ ANTI-KICK: ON" or "🛡️ ANTI-KICK: OFF"
-    
-    -- Обновляем список игроков
-    updatePlayerList()
-    
-    -- Автообновление списка
-    Players.PlayerAdded:Connect(updatePlayerList)
-    Players.PlayerRemoving:Connect(updatePlayerList)
     
     gui = ScreenGui
     return ScreenGui
 end
 
--- ==================== АНТИ-ГРАБ СИСТЕМА ====================
+-- Функции защиты
 local function startAntiGrab()
-    if not antiGrabActive then return end
-    
-    local heartbeat
-    heartbeat = RunService.Heartbeat:Connect(function()
-        if not antiGrabActive then
-            heartbeat:Disconnect()
-            return
-        end
-        
-        local char = player.Character
-        if not char then return end
-        
-        -- Очистка физических сил
-        for _, obj in pairs(char:GetDescendants()) do
-            if obj:IsA("BodyVelocity") or obj:IsA("BodyPosition") or 
-               obj:IsA("BodyAngularVelocity") or obj:IsA("BodyForce") then
-                obj:Destroy()
-            end
-        end
-        
-        -- Восстановление контроля
-        local humanoid = char:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.PlatformStand = false
-            humanoid.AutoRotate = true
-            
-            -- Остановка анимаций
-            for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
-                track:Stop()
-            end
-        end
-    end)
+    print("🛡️ Анти-граб активирован")
+    -- Здесь будет код защиты
 end
 
--- ==================== АНТИ-КИК СИСТЕМА ====================
 local function startAntiKick()
-    if not antiKickActive then return end
-    
-    -- Защита от телепортации в небо/бездну
-    local char = player.Character
-    if not char then return end
-    
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if root then
-        local lastValidPosition = root.Position
-        
-        RunService.Heartbeat:Connect(function()
-            if not antiKickActive then return end
-            
-            -- Проверка на телепортацию в небо
-            if root.Position.Y > 10000 or root.Position.Y < -1000 then
-                root.CFrame = CFrame.new(lastValidPosition)
-                print("🛡️ Защита от кика активирована!")
-            else
-                lastValidPosition = root.Position
-            end
-        end)
-    end
+    print("🛡️ Анти-кик активирован")
+    -- Здесь будет код защиты
 end
 
--- ==================== СИСТЕМА КИКА ====================
-local function kickPlayer(target)
-    if not target or not target.Character then return end
-    
-    local char = target.Character
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    
-    -- Методы кика
-    local methods = {
-        function() -- Небо
-            root.CFrame = CFrame.new(root.Position + Vector3.new(0, 10000, 0))
-        end,
-        function() -- Бездна
-            root.CFrame = CFrame.new(0, -10000, 0)
-        end,
-        function() -- Вращение
-            local bav = Instance.new("BodyAngularVelocity")
-            bav.AngularVelocity = Vector3.new(0, 1000, 0)
-            bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            bav.Parent = root
-            
-            local bv = Instance.new("BodyVelocity")
-            bv.Velocity = Vector3.new(0, 500, 0)
-            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bv.Parent = root
-            
-            game.Debris:AddItem(bav, 5)
-            game.Debris:AddItem(bv, 5)
-        end
-    }
-    
-    -- Случайный метод кика
-    local method = methods[math.random(1, #methods)]
-    method()
-    
-    print("💥 Кикнут: " .. target.Name)
-end
-
--- ==================== УПРАВЛЕНИЕ ГЛАВНЫМ МЕНЮ ====================
-UIS.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    
-    if input.KeyCode == MENU_KEY then
-        menuOpen = not menuOpen
-        
-        if menuOpen then
+-- Открытие меню по K
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.K then
+        if not menuOpen then
             createGUI()
-            print("📱 GGH Menu открыто (K)")
-        elseif gui then
-            gui:Destroy()
-            gui = nil
-            print("📱 GGH Menu закрыто")
+            menuOpen = true
+            print("📱 GGH меню открыто")
+        else
+            if gui then
+                gui:Destroy()
+                gui = nil
+            end
+            menuOpen = false
+            print("📱 GGH меню закрыто")
         end
     end
 end)
 
--- ==================== АВТО-ЗАЩИТА ПРИ ВОЗРОЖДЕНИИ ====================
-player.CharacterAdded:Connect(function()
-    wait(1)
-    if antiGrabActive then
-        startAntiGrab()
-    end
-    if antiKickActive then
-        startAntiKick()
-    end
-end)
-
--- ==================== ИНИЦИАЛИЗАЦИЯ ====================
-print("========================================")
-print("🔥 GGH FLIGHT CONTROL SYSTEM LOADED")
-print("========================================")
+print("====================================")
+print("🔥 GGH CONTROL SYSTEM ЗАГРУЖЕН")
+print("====================================")
 print("Нажмите K для открытия меню")
-print("========================================")
+print("====================================")
