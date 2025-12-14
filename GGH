@@ -1,6 +1,5 @@
---===GGH script to FTAP===--
--- ULTIMATE EXPLOITER PACK v3.0
--- by GGH Scripts
+-- 🔥 GGH FLIGHT CONTROL SYSTEM
+-- 🛡️ Anti-Grab • Anti-Kick • Player Control • GUI
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -9,717 +8,315 @@ local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
 
--- GUI Интерфейс
-local ScreenGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local Title = Instance.new("TextLabel")
-local CloseButton = Instance.new("TextButton")
-local TabButtons = Instance.new("Frame")
-local ContentFrame = Instance.new("Frame")
+-- ==================== ГЛАВНЫЕ НАСТРОЙКИ ====================
+local MENU_KEY = Enum.KeyCode.K
+local GUI_ENABLED = true
 
--- Настройки GUI
-ScreenGui.Name = "GGH_Menu"
-ScreenGui.Parent = game.CoreGui
+-- ==================== ПЕРЕМЕННЫЕ ====================
+local antiGrabActive = false
+local antiKickActive = false
+local selectedTarget = nil
+local menuOpen = false
+local gui = nil
 
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 500, 0, 400)
-MainFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Parent = ScreenGui
-
-Title.Name = "Title"
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-Title.Text = "🔥 GGH ULTIMATE PACK v3.0"
-Title.TextColor3 = Color3.fromRGB(255, 100, 100)
-Title.TextSize = 18
-Title.Font = Enum.Font.GothamBold
-Title.Parent = MainFrame
-
-CloseButton.Name = "CloseButton"
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Position = UDim2.new(1, -30, 0, 0)
-CloseButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.white
-CloseButton.TextSize = 16
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.Parent = MainFrame
-
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
--- Создаем табы
-TabButtons.Name = "TabButtons"
-TabButtons.Size = UDim2.new(0, 120, 1, -30)
-TabButtons.Position = UDim2.new(0, 0, 0, 30)
-TabButtons.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-TabButtons.Parent = MainFrame
-
-ContentFrame.Name = "ContentFrame"
-ContentFrame.Size = UDim2.new(1, -120, 1, -30)
-ContentFrame.Position = UDim2.new(0, 120, 0, 30)
-ContentFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-ContentFrame.Parent = MainFrame
-
--- Список функций
-local tabs = {
-    "🎯 АИМ И ВЫКИД",
-    "🛡️ АНТИ-ГРАБ",
-    "💥 КИК СИСТЕМА",
-    "⚡ СТАТЫ",
-    "🔧 УТИЛИТЫ"
-}
-
-local currentTab = 1
-
--- Создаем кнопки табов
-for i, tabName in ipairs(tabs) do
-    local tabButton = Instance.new("TextButton")
-    tabButton.Name = "Tab"..i
-    tabButton.Size = UDim2.new(1, 0, 0, 40)
-    tabButton.Position = UDim2.new(0, 0, 0, (i-1)*45)
-    tabButton.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    tabButton.BorderSizePixel = 0
-    tabButton.Text = tabName
-    tabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
-    tabButton.TextSize = 14
-    tabButton.Font = Enum.Font.Gotham
-    tabButton.Parent = TabButtons
+-- ==================== СОЗДАНИЕ GUI ====================
+local function createGUI()
+    if gui then gui:Destroy() end
     
-    tabButton.MouseButton1Click:Connect(function()
-        currentTab = i
-        updateContent()
-    end)
-end
-
-function updateContent()
-    for _, child in pairs(ContentFrame:GetChildren()) do
-        child:Destroy()
-    end
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "GGH_FlightControl"
+    ScreenGui.Parent = game.CoreGui
     
-    if currentTab == 1 then
-        loadAimContent()
-    elseif currentTab == 2 then
-        loadAntiGrabContent()
-    elseif currentTab == 3 then
-        loadKickContent()
-    elseif currentTab == 4 then
-        loadStatsContent()
-    elseif currentTab == 5 then
-        loadUtilsContent()
-    end
-end
-
--- ==================== [1] АИМ И ВЫКИД СИСТЕМА ====================
-local aimTarget = nil
-local aimEnabled = false
-local yeetEnabled = false
-local launchPower = 500
-
-function loadAimContent()
-    local scroll = Instance.new("ScrollingFrame")
-    scroll.Size = UDim2.new(1, 0, 1, 0)
-    scroll.BackgroundTransparency = 1
-    scroll.Parent = ContentFrame
-    
-    local yPos = 10
+    -- Основной фрейм
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Size = UDim2.new(0, 400, 0, 450)
+    MainFrame.Position = UDim2.new(0.5, -200, 0.5, -225)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+    MainFrame.Parent = ScreenGui
     
     -- Заголовок
-    local title = createLabel("🎯 АИМБОТ И ВЫКИДЫВАНИЕ", 20, yPos)
-    title.TextColor3 = Color3.fromRGB(255, 100, 100)
-    title.Parent = scroll
-    yPos = yPos + 30
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1, 0, 0, 40)
+    Title.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    Title.Text = "🔥 GGH FLIGHT CONTROL v2.0"
+    Title.TextColor3 = Color3.fromRGB(255, 100, 100)
+    Title.TextSize = 18
+    Title.Font = Enum.Font.GothamBold
+    Title.Parent = MainFrame
     
-    -- Включение аима
-    local aimToggle = createButton("ВКЛ/ВЫКЛ АИМ (Правая кнопка мыши)", 20, yPos)
-    aimToggle.Parent = scroll
-    yPos = yPos + 40
+    -- Закрыть кнопка
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Size = UDim2.new(0, 40, 0, 40)
+    CloseBtn.Position = UDim2.new(1, -40, 0, 0)
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    CloseBtn.Text = "X"
+    CloseBtn.TextColor3 = Color3.white
+    CloseBtn.TextSize = 18
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.Parent = MainFrame
     
-    aimToggle.MouseButton1Click:Connect(function()
-        aimEnabled = not aimEnabled
-        aimToggle.Text = aimEnabled and "✅ АИМ ВКЛЮЧЕН" or "🎯 ВКЛ/ВЫКЛ АИМ"
-        print("Aimbot: " .. (aimEnabled and "ON" or "OFF"))
+    CloseBtn.MouseButton1Click:Connect(function()
+        menuOpen = false
+        ScreenGui:Destroy()
+        gui = nil
     end)
     
-    -- Выбор цели
-    local targetLabel = createLabel("Выберите цель:", 20, yPos)
-    targetLabel.Parent = scroll
-    yPos = yPos + 30
+    -- Список игроков
+    local PlayerScroll = Instance.new("ScrollingFrame")
+    PlayerScroll.Size = UDim2.new(0.9, 0, 0, 200)
+    PlayerScroll.Position = UDim2.new(0.05, 0, 0, 50)
+    PlayerScroll.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    PlayerScroll.BorderSizePixel = 0
+    PlayerScroll.ScrollBarThickness = 5
+    PlayerScroll.Parent = MainFrame
     
-    local targetBox = Instance.new("TextBox")
-    targetBox.Size = UDim2.new(0.8, 0, 0, 30)
-    targetBox.Position = UDim2.new(0.1, 0, 0, yPos/400)
-    targetBox.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-    targetBox.TextColor3 = Color3.white
-    targetBox.Text = "Имя игрока"
-    targetBox.Parent = scroll
-    yPos = yPos + 40
+    -- Кнопки управления
+    local ControlFrame = Instance.new("Frame")
+    ControlFrame.Size = UDim2.new(0.9, 0, 0, 180)
+    ControlFrame.Position = UDim2.new(0.05, 0, 0, 260)
+    ControlFrame.BackgroundTransparency = 1
+    ControlFrame.Parent = MainFrame
     
-    local setTargetBtn = createButton("Установить цель", 20, yPos)
-    setTargetBtn.Parent = scroll
-    yPos = yPos + 40
+    -- Функция создания кнопки
+    local function createControlButton(text, yPos, color, callback)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, 0, 0, 35)
+        btn.Position = UDim2.new(0, 0, 0, yPos)
+        btn.BackgroundColor3 = color
+        btn.TextColor3 = Color3.white
+        btn.Text = text
+        btn.TextSize = 14
+        btn.Font = Enum.Font.Gotham
+        btn.Parent = ControlFrame
+        
+        btn.MouseButton1Click:callback
+        
+        return btn
+    end
     
-    setTargetBtn.MouseButton1Click:Connect(function()
-        local targetName = targetBox.Text
+    -- Обновление списка игроков
+    local function updatePlayerList()
+        for _, child in pairs(PlayerScroll:GetChildren()) do
+            if child:IsA("TextButton") then
+                child:Destroy()
+            end
+        end
+        
+        local yPos = 5
         for _, plr in pairs(Players:GetPlayers()) do
-            if string.lower(plr.Name) == string.lower(targetName) then
-                aimTarget = plr
-                print("🎯 Цель установлена: " .. plr.Name)
-                break
+            if plr ~= player then
+                local playerBtn = Instance.new("TextButton")
+                playerBtn.Size = UDim2.new(0.95, 0, 0, 30)
+                playerBtn.Position = UDim2.new(0.025, 0, 0, yPos)
+                playerBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+                playerBtn.TextColor3 = Color3.white
+                playerBtn.Text = plr.Name
+                playerBtn.TextSize = 13
+                playerBtn.Font = Enum.Font.Gotham
+                playerBtn.Parent = PlayerScroll
+                
+                playerBtn.MouseButton1Click:Connect(function()
+                    selectedTarget = plr
+                    print("🎯 Выбрана цель: " .. plr.Name)
+                    -- Подсветка выбранного
+                    for _, btn in pairs(PlayerScroll:GetChildren()) do
+                        if btn:IsA("TextButton") then
+                            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+                        end
+                    end
+                    playerBtn.BackgroundColor3 = Color3.fromRGB(100, 50, 150)
+                end)
+                
+                yPos = yPos + 35
+            end
+        end
+        
+        PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, yPos + 5)
+    end
+    
+    -- Создаем кнопки управления
+    local antiGrabBtn = createControlButton("", 0, Color3.fromRGB(60, 80, 120), function()
+        antiGrabActive = not antiGrabActive
+        antiGrabBtn.Text = antiGrabActive and "🛡️ ANTI-GRAB: ON" or "🛡️ ANTI-GRAB: OFF"
+        antiGrabBtn.BackgroundColor3 = antiGrabActive and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(60, 80, 120)
+        startAntiGrab()
+    end)
+    
+    local antiKickBtn = createControlButton("", 40, Color3.fromRGB(80, 60, 120), function()
+        antiKickActive = not antiKickActive
+        antiKickBtn.Text = antiKickActive and "🛡️ ANTI-KICK: ON" or "🛡️ ANTI-KICK: OFF"
+        antiKickBtn.BackgroundColor3 = antiKickActive and Color3.fromRGB(150, 50, 50) or Color3.fromRGB(80, 60, 120)
+        startAntiKick()
+    end)
+    
+    local kickBtn = createControlButton("💥 KICK SELECTED", 80, Color3.fromRGB(120, 60, 60), function()
+        if selectedTarget then
+            kickPlayer(selectedTarget)
+        else
+            print("❌ Не выбрана цель!")
+        end
+    end)
+    
+    local massKickBtn = createControlButton("☢️ KICK ALL PLAYERS", 120, Color3.fromRGB(150, 50, 50), function()
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= player then
+                kickPlayer(plr)
+                wait(0.1)
             end
         end
     end)
     
-    -- Мощность выкидывания
-    local powerLabel = createLabel("Сила выкидывания: " .. launchPower, 20, yPos)
-    powerLabel.Parent = scroll
-    yPos = yPos + 30
+    -- Инициализация текста кнопок
+    antiGrabBtn.Text = antiGrabActive and "🛡️ ANTI-GRAB: ON" or "🛡️ ANTI-GRAB: OFF"
+    antiKickBtn.Text = antiKickActive and "🛡️ ANTI-KICK: ON" or "🛡️ ANTI-KICK: OFF"
     
-    local powerSlider = Instance.new("TextButton")
-    powerSlider.Size = UDim2.new(0.8, 0, 0, 20)
-    powerSlider.Position = UDim2.new(0.1, 0, 0, yPos/400)
-    powerSlider.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
-    powerSlider.Text = "Изменить мощность"
-    powerSlider.Parent = scroll
-    yPos = yPos + 40
+    -- Обновляем список игроков
+    updatePlayerList()
     
-    powerSlider.MouseButton1Click:Connect(function()
-        launchPower = launchPower + 100
-        if launchPower > 2000 then launchPower = 100 end
-        powerLabel.Text = "Сила выкидывания: " .. launchPower
-    end)
+    -- Автообновление списка
+    Players.PlayerAdded:Connect(updatePlayerList)
+    Players.PlayerRemoving:Connect(updatePlayerList)
     
-    -- Кнопка выкидывания
-    local yeetBtn = createButton("🚀 ВЫКИНУТЬ ЦЕЛЬ (Y)", 20, yPos)
-    yeetBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    yeetBtn.Parent = scroll
-    yPos = yPos + 50
-    
-    yeetBtn.MouseButton1Click:Connect(function()
-        yeetTarget()
-    end)
-    
-    -- Авто-выкидывание
-    local autoYeetToggle = createButton("🤖 АВТО-ВЫКИДЫВАНИЕ (T)", 20, yPos)
-    autoYeetToggle.Parent = scroll
-    yPos = yPos + 40
-    
-    autoYeetToggle.MouseButton1Click:Connect(function()
-        yeetEnabled = not yeetEnabled
-        autoYeetToggle.Text = yeetEnabled and "🤖 АВТО-ВЫКИД ВКЛ" or "🤖 АВТО-ВЫКИДЫВАНИЕ"
-        
-        while yeetEnabled and aimTarget do
-            yeetTarget()
-            wait(0.5)
-        end
-    end)
-    
-    scroll.CanvasSize = UDim2.new(0, 0, 0, yPos + 50)
+    gui = ScreenGui
+    return ScreenGui
 end
 
--- Функция выкидывания
-function yeetTarget()
-    if not aimTarget or not aimTarget.Character then return end
+-- ==================== АНТИ-ГРАБ СИСТЕМА ====================
+local function startAntiGrab()
+    if not antiGrabActive then return end
     
-    local targetRoot = aimTarget.Character:FindFirstChild("HumanoidRootPart")
-    local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    
-    if targetRoot and myRoot then
-        -- Создаем мощный BodyVelocity
-        local bv = Instance.new("BodyVelocity")
-        bv.Velocity = Vector3.new(
-            math.random(-launchPower, launchPower),
-            launchPower,
-            math.random(-launchPower, launchPower)
-        )
-        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bv.P = 100000
-        bv.Parent = targetRoot
-        
-        -- Добавляем вращение
-        local bav = Instance.new("BodyAngularVelocity")
-        bav.AngularVelocity = Vector3.new(
-            math.random(-50, 50),
-            math.random(-50, 50),
-            math.random(-50, 50)
-        )
-        bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-        bav.Parent = targetRoot
-        
-        -- Автоудаление
-        game:GetService("Debris"):AddItem(bv, 3)
-        game:GetService("Debris"):AddItem(bav, 3)
-        
-        print("💥 ВЫКИНУТ: " .. aimTarget.Name)
-    end
-end
-
--- Система аимбота
-mouse.Button2Down:Connect(function()
-    if aimEnabled and aimTarget and aimTarget.Character then
-        local targetRoot = aimTarget.Character:FindFirstChild("HumanoidRootPart")
-        local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        
-        if targetRoot and myRoot then
-            -- Плавное наведение
-            local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Linear)
-            local tween = TweenService:Create(
-                workspace.CurrentCamera,
-                tweenInfo,
-                {CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, targetRoot.Position)}
-            )
-            tween:Play()
+    local heartbeat
+    heartbeat = RunService.Heartbeat:Connect(function()
+        if not antiGrabActive then
+            heartbeat:Disconnect()
+            return
         end
-    end
-end)
-
--- ==================== [2] АНТИ-ГРАБ СИСТЕМА ====================
-local antiGrabEnabled = false
-local antiGrabConnection
-
-function loadAntiGrabContent()
-    local yPos = 10
-    
-    local title = createLabel("🛡️ СИСТЕМА ЗАЩИТЫ ОТ ГРАБА", 20, yPos)
-    title.TextColor3 = Color3.fromRGB(100, 200, 255)
-    title.Parent = ContentFrame
-    yPos = yPos + 40
-    
-    -- Включение защиты
-    local toggleBtn = createButton("АКТИВИРОВАТЬ ЗАЩИТУ (Q)", 20, yPos)
-    toggleBtn.Parent = ContentFrame
-    yPos = yPos + 50
-    
-    toggleBtn.MouseButton1Click:Connect(function()
-        antiGrabEnabled = not antiGrabEnabled
-        toggleBtn.Text = antiGrabEnabled and "🛡️ ЗАЩИТА АКТИВНА" or "АКТИВИРОВАТЬ ЗАЩИТУ"
         
-        if antiGrabEnabled then
-            startAntiGrab()
-        else
-            stopAntiGrab()
-        end
-    end)
-    
-    -- Опции защиты
-    local options = {
-        {"✅ Защита от BodyVelocity", true},
-        {"✅ Защита от BodyPosition", true},
-        {"✅ Защита от анимаций", true},
-        {"✅ Защита от телепортации", true},
-        {"✅ Защита от сбивания", true}
-    }
-    
-    for i, option in ipairs(options) do
-        local optionBtn = createButton(option[1], 20, yPos)
-        optionBtn.Size = UDim2.new(0.9, 0, 0, 30)
-        optionBtn.Parent = ContentFrame
-        yPos = yPos + 35
-    end
-    
-    -- Статус защиты
-    local statusLabel = createLabel("Статус: ВЫКЛ", 20, yPos)
-    statusLabel.Parent = ContentFrame
-    yPos = yPos + 30
-    
-    function updateStatus()
-        statusLabel.Text = "Статус: " .. (antiGrabEnabled and "🟢 АКТИВНА" or "🔴 ВЫКЛ")
-    end
-end
-
-function startAntiGrab()
-    antiGrabConnection = RunService.Heartbeat:Connect(function()
-        local character = player.Character
-        if not character then return end
+        local char = player.Character
+        if not char then return end
         
-        -- Удаляем все силы
-        for _, obj in pairs(character:GetDescendants()) do
+        -- Очистка физических сил
+        for _, obj in pairs(char:GetDescendants()) do
             if obj:IsA("BodyVelocity") or obj:IsA("BodyPosition") or 
                obj:IsA("BodyAngularVelocity") or obj:IsA("BodyForce") then
                 obj:Destroy()
             end
         end
         
-        -- Защита от анимаций
-        local humanoid = character:FindFirstChild("Humanoid")
+        -- Восстановление контроля
+        local humanoid = char:FindFirstChild("Humanoid")
         if humanoid then
+            humanoid.PlatformStand = false
+            humanoid.AutoRotate = true
+            
+            -- Остановка анимаций
             for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
                 track:Stop()
             end
         end
-        
-        -- Фиксируем позицию (опционально)
-        local root = character:FindFirstChild("HumanoidRootPart")
-        if root then
-            root.Velocity = Vector3.new(root.Velocity.X, math.clamp(root.Velocity.Y, -50, 50), root.Velocity.Z)
-        end
     end)
 end
 
-function stopAntiGrab()
-    if antiGrabConnection then
-        antiGrabConnection:Disconnect()
-        antiGrabConnection = nil
-    end
-end
-
--- ==================== [3] КИК СИСТЕМА ====================
-function loadKickContent()
-    local scroll = Instance.new("ScrollingFrame")
-    scroll.Size = UDim2.new(1, 0, 1, 0)
-    scroll.BackgroundTransparency = 1
-    scroll.Parent = ContentFrame
+-- ==================== АНТИ-КИК СИСТЕМА ====================
+local function startAntiKick()
+    if not antiKickActive then return end
     
-    local yPos = 10
+    -- Защита от телепортации в небо/бездну
+    local char = player.Character
+    if not char then return end
     
-    local title = createLabel("💥 МОЩНАЯ СИСТЕМА КИКА", 20, yPos)
-    title.TextColor3 = Color3.fromRGB(255, 150, 50)
-    title.Parent = scroll
-    yPos = yPos + 40
-    
-    -- Поле для ввода ника
-    local nameBox = Instance.new("TextBox")
-    nameBox.Size = UDim2.new(0.8, 0, 0, 35)
-    nameBox.Position = UDim2.new(0.1, 0, 0, yPos/400)
-    nameBox.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-    nameBox.TextColor3 = Color3.white
-    nameBox.Text = "Введите ник игрока"
-    nameBox.Parent = scroll
-    yPos = yPos + 45
-    
-    -- Методы кика
-    local kickMethods = {
-        {"🚀 КИК В НЕБО", function(target) kickToSky(target) end},
-        {"🌀 КИК В БЕЗДНУ", function(target) kickToVoid(target) end},
-        {"💫 СПИН-КИК", function(target) spinKick(target) end},
-        {"🔥 КИК С ВЗРЫВОМ", function(target) explodeKick(target) end},
-        {"⚡ МОЛНИЕВЫЙ КИК", function(target) lightningKick(target) end},
-        {"❄️ ЛЕДЯНОЙ КИК", function(target) freezeKick(target) end}
-    }
-    
-    for i, method in ipairs(kickMethods) do
-        local btn = createButton(method[1], 20, yPos)
-        btn.Size = UDim2.new(0.9, 0, 0, 35)
-        btn.Parent = scroll
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if root then
+        local lastValidPosition = root.Position
         
-        btn.MouseButton1Click:Connect(function()
-            local targetName = nameBox.Text
-            for _, plr in pairs(Players:GetPlayers()) do
-                if string.find(string.lower(plr.Name), string.lower(targetName)) then
-                    method[2](plr)
-                    break
-                end
+        RunService.Heartbeat:Connect(function()
+            if not antiKickActive then return end
+            
+            -- Проверка на телепортацию в небо
+            if root.Position.Y > 10000 or root.Position.Y < -1000 then
+                root.CFrame = CFrame.new(lastValidPosition)
+                print("🛡️ Защита от кика активирована!")
+            else
+                lastValidPosition = root.Position
             end
         end)
-        
-        yPos = yPos + 40
     end
+end
+
+-- ==================== СИСТЕМА КИКА ====================
+local function kickPlayer(target)
+    if not target or not target.Character then return end
     
-    -- Массовый кик всех
-    local massKickBtn = createButton("☢️ КИКНУТЬ ВСЕХ ИГРОКОВ", 20, yPos)
-    massKickBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    massKickBtn.Parent = scroll
-    yPos = yPos + 50
+    local char = target.Character
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
     
-    massKickBtn.MouseButton1Click:Connect(function()
-        for _, plr in pairs(Players:GetPlayers()) do
-            if plr ~= player then
-                kickToSky(plr)
-                wait(0.1)
-            end
+    -- Методы кика
+    local methods = {
+        function() -- Небо
+            root.CFrame = CFrame.new(root.Position + Vector3.new(0, 10000, 0))
+        end,
+        function() -- Бездна
+            root.CFrame = CFrame.new(0, -10000, 0)
+        end,
+        function() -- Вращение
+            local bav = Instance.new("BodyAngularVelocity")
+            bav.AngularVelocity = Vector3.new(0, 1000, 0)
+            bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+            bav.Parent = root
+            
+            local bv = Instance.new("BodyVelocity")
+            bv.Velocity = Vector3.new(0, 500, 0)
+            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bv.Parent = root
+            
+            game.Debris:AddItem(bav, 5)
+            game.Debris:AddItem(bv, 5)
         end
-    end)
-    
-    scroll.CanvasSize = UDim2.new(0, 0, 0, yPos + 50)
-end
-
--- Методы кика
-function kickToSky(target)
-    if not target.Character then return end
-    local root = target.Character:FindFirstChild("HumanoidRootPart")
-    if root then
-        root.CFrame = root.CFrame * CFrame.new(0, 10000, 0)
-    end
-end
-
-function kickToVoid(target)
-    if not target.Character then return end
-    local root = target.Character:FindFirstChild("HumanoidRootPart")
-    if root then
-        root.CFrame = CFrame.new(0, -1000, 0)
-    end
-end
-
-function spinKick(target)
-    if not target.Character then return end
-    local root = target.Character:FindFirstChild("HumanoidRootPart")
-    if root then
-        local bav = Instance.new("BodyAngularVelocity")
-        bav.AngularVelocity = Vector3.new(0, 100, 0)
-        bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-        bav.Parent = root
-        
-        local bv = Instance.new("BodyVelocity")
-        bv.Velocity = Vector3.new(0, 100, 0)
-        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bv.Parent = root
-        
-        game.Debris:AddItem(bav, 5)
-        game.Debris:AddItem(bv, 5)
-    end
-end
-
--- ==================== [4] СИСТЕМА СТАТОВ ====================
-local walkSpeed = 16
-local jumpPower = 50
-
-function loadStatsContent()
-    local yPos = 10
-    
-    local title = createLabel("⚡ ИЗМЕНЕНИЕ ХАРАКТЕРИСТИК", 20, yPos)
-    title.TextColor3 = Color3.fromRGB(100, 255, 100)
-    title.Parent = ContentFrame
-    yPos = yPos + 40
-    
-    -- Скорость ходьбы
-    local speedLabel = createLabel("Скорость: " .. walkSpeed, 20, yPos)
-    speedLabel.Parent = ContentFrame
-    yPos = yPos + 30
-    
-    local speedPlus = createButton("+", 20, yPos)
-    speedPlus.Size = UDim2.new(0, 40, 0, 30)
-    speedPlus.Parent = ContentFrame
-    
-    local speedMinus = createButton("-", 70, yPos)
-    speedMinus.Size = UDim2.new(0, 40, 0, 30)
-    speedMinus.Parent = ContentFrame
-    
-    local speedMax = createButton("MAX", 120, yPos)
-    speedMax.Size = UDim2.new(0, 60, 0, 30)
-    speedMax.Parent = ContentFrame
-    yPos = yPos + 40
-    
-    speedPlus.MouseButton1Click:Connect(function()
-        walkSpeed = walkSpeed + 10
-        updateStats()
-        speedLabel.Text = "Скорость: " .. walkSpeed
-    end)
-    
-    speedMinus.MouseButton1Click:Connect(function()
-        walkSpeed = math.max(16, walkSpeed - 10)
-        updateStats()
-        speedLabel.Text = "Скорость: " .. walkSpeed
-    end)
-    
-    speedMax.MouseButton1Click:Connect(function()
-        walkSpeed = 500
-        updateStats()
-        speedLabel.Text = "Скорость: MAX"
-    end)
-    
-    -- Сила прыжка
-    local jumpLabel = createLabel("Прыжок: " .. jumpPower, 20, yPos)
-    jumpLabel.Parent = ContentFrame
-    yPos = yPos + 30
-    
-    local jumpPlus = createButton("+", 20, yPos)
-    jumpPlus.Size = UDim2.new(0, 40, 0, 30)
-    jumpPlus.Parent = ContentFrame
-    
-    local jumpMinus = createButton("-", 70, yPos)
-    jumpMinus.Size = UDim2.new(0, 40, 0, 30)
-    jumpMinus.Parent = ContentFrame
-    
-    local jumpMax = createButton("MAX", 120, yPos)
-    jumpMax.Size = UDim2.new(0, 60, 0, 30)
-    jumpMax.Parent = ContentFrame
-    yPos = yPos + 40
-    
-    jumpPlus.MouseButton1Click:Connect(function()
-        jumpPower = jumpPower + 25
-        updateStats()
-        jumpLabel.Text = "Прыжок: " .. jumpPower
-    end)
-    
-    jumpMinus.MouseButton1Click:Connect(function()
-        jumpPower = math.max(50, jumpPower - 25)
-        updateStats()
-        jumpLabel.Text = "Прыжок: " .. jumpPower
-    end)
-    
-    jumpMax.MouseButton1Click:Connect(function()
-        jumpPower = 1000
-        updateStats()
-        jumpLabel.Text = "Прыжок: MAX"
-    end)
-    
-    -- Кнопка сброса
-    local resetBtn = createButton("🔄 СБРОС СТАТОВ", 20, yPos)
-    resetBtn.Parent = ContentFrame
-    yPos = yPos + 50
-    
-    resetBtn.MouseButton1Click:Connect(function()
-        walkSpeed = 16
-        jumpPower = 50
-        updateStats()
-        speedLabel.Text = "Скорость: " .. walkSpeed
-        jumpLabel.Text = "Прыжок: " .. jumpPower
-    end)
-end
-
-function updateStats()
-    local character = player.Character
-    if not character then return end
-    
-    local humanoid = character:FindFirstChild("Humanoid")
-    if humanoid then
-        humanoid.WalkSpeed = walkSpeed
-        humanoid.JumpPower = jumpPower
-    end
-end
-
--- ==================== [5] УТИЛИТЫ ====================
-function loadUtilsContent()
-    local scroll = Instance.new("ScrollingFrame")
-    scroll.Size = UDim2.new(1, 0, 1, 0)
-    scroll.BackgroundTransparency = 1
-    scroll.Parent = ContentFrame
-    
-    local yPos = 10
-    
-    local title = createLabel("🔧 ДОПОЛНИТЕЛЬНЫЕ УТИЛИТЫ", 20, yPos)
-    title.TextColor3 = Color3.fromRGB(200, 150, 255)
-    title.Parent = scroll
-    yPos = yPos + 40
-    
-    -- Утилиты
-    local utils = {
-        {"📦 NO-CLIP (N)", function() toggleNoclip() end},
-        {"👻 INVISIBLE", function() makeInvisible() end},
-        {"💾 TP TO SPAWN", function() teleportToSpawn() end},
-        {"🎯 TP TO MOUSE", function() teleportToMouse() end},
-        {"🔍 ESP ИГРОКОВ", function() toggleESP() end},
-        {"⚙️ FIX CAMERA", function() fixCamera() end},
-        {"🌀 ANTI-AFK", function() toggleAntiAFK() end},
-        {"✨ CLEAN MAP", function() cleanMap() end}
     }
     
-    for i, util in ipairs(utils) do
-        local btn = createButton(util[1], 20, yPos)
-        btn.Size = UDim2.new(0.9, 0, 0, 35)
-        btn.Parent = scroll
-        
-        btn.MouseButton1Click:Connect(util[2])
-        
-        yPos = yPos + 40
-    end
+    -- Случайный метод кика
+    local method = methods[math.random(1, #methods)]
+    method()
     
-    -- Клавиши быстрого доступа
-    yPos = yPos + 20
-    local hotkeysTitle = createLabel("🎮 ГОРЯЧИЕ КЛАВИШИ:", 20, yPos)
-    hotkeysTitle.Parent = scroll
-    yPos = yPos + 30
-    
-    local hotkeys = {
-        "Q - Защита от граба",
-        "Y - Выкинуть цель",
-        "T - Авто-выкид",
-        "N - No-Clip",
-        "R - Телепорт к мыши",
-        "F - Летать (удерживать)"
-    }
-    
-    for i, hotkey in ipairs(hotkeys) do
-        local label = createLabel(hotkey, 20, yPos)
-        label.TextXAlignment = Enum.TextXAlignment.Left
-        label.Parent = scroll
-        yPos = yPos + 25
-    end
-    
-    scroll.CanvasSize = UDim2.new(0, 0, 0, yPos + 50)
+    print("💥 Кикнут: " .. target.Name)
 end
 
--- Функции утилит
-function toggleNoclip()
-    local character = player.Character
-    if not character then return end
+-- ==================== УПРАВЛЕНИЕ ГЛАВНЫМ МЕНЮ ====================
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
     
-    for _, part in pairs(character:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = not part.CanCollide
+    if input.KeyCode == MENU_KEY then
+        menuOpen = not menuOpen
+        
+        if menuOpen then
+            createGUI()
+            print("📱 GGH Menu открыто (K)")
+        elseif gui then
+            gui:Destroy()
+            gui = nil
+            print("📱 GGH Menu закрыто")
         end
-    end
-    print("No-Clip: " .. (character.Head.CanCollide and "OFF" or "ON"))
-end
-
-function teleportToMouse()
-    local character = player.Character
-    if not character then return end
-    
-    local root = character:FindFirstChild("HumanoidRootPart")
-    if root then
-        root.CFrame = CFrame.new(mouse.Hit.Position) + Vector3.new(0, 5, 0)
-    end
-end
-
--- ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
-function createButton(text, x, y)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.9, 0, 0, 40)
-    btn.Position = UDim2.new(0.05, 0, 0, y/400)
-    btn.BackgroundColor3 = Color3.fromRGB(70, 70, 90)
-    btn.TextColor3 = Color3.white
-    btn.Text = text
-    btn.TextSize = 14
-    btn.Font = Enum.Font.Gotham
-    return btn
-end
-
-function createLabel(text, x, y)
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.9, 0, 0, 30)
-    label.Position = UDim2.new(0.05, 0, 0, y/400)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.white
-    label.Text = text
-    label.TextSize = 16
-    label.Font = Enum.Font.Gotham
-    return label
-end
-
--- ==================== ИНИЦИАЛИЗАЦИЯ ====================
-updateContent()
-
--- Назначение горячих клавиш
-UIS.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.Q then
-        antiGrabEnabled = not antiGrabEnabled
-        if antiGrabEnabled then startAntiGrab() else stopAntiGrab() end
-        print("Anti-Grab: " .. (antiGrabEnabled and "ON" : "OFF"))
-        
-    elseif input.KeyCode == Enum.KeyCode.Y then
-        yeetTarget()
-        
-    elseif input.KeyCode == Enum.KeyCode.N then
-        toggleNoclip()
-        
-    elseif input.KeyCode == Enum.KeyCode.R then
-        teleportToMouse()
     end
 end)
 
--- Авто-обновление статов при смене персонажа
+-- ==================== АВТО-ЗАЩИТА ПРИ ВОЗРОЖДЕНИИ ====================
 player.CharacterAdded:Connect(function()
     wait(1)
-    updateStats()
+    if antiGrabActive then
+        startAntiGrab()
+    end
+    if antiKickActive then
+        startAntiKick()
+    end
 end)
 
-print("🔥 GGH ULTIMATE PACK v3.0 ЗАГРУЖЕН!")
-print("📌 Нажмите Q для защиты от граба")
-print("🎯 Зажмите ПКМ для аимбота")
-print("🚀 Нажмите Y для выкидывания")
+-- ==================== ИНИЦИАЛИЗАЦИЯ ====================
+print("========================================")
+print("🔥 GGH FLIGHT CONTROL SYSTEM LOADED")
+print("========================================")
+print("Нажмите K для открытия меню")
+print("========================================")
